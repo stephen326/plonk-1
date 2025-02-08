@@ -503,6 +503,17 @@ mod test {
         let beta_s_sigma_4_iter =
             s_sigma_4_mapping.iter().map(|sigma| *sigma * beta);
 
+        println!("beta_s_sigma_1_iter{:?}", beta_s_sigma_1_iter);
+        println!("beta_s_sigma_2_iter{:?}", beta_s_sigma_2_iter);
+        println!("beta_s_sigma_3_iter{:?}", beta_s_sigma_3_iter);
+        println!("beta_s_sigma_4_iter{:?}", beta_s_sigma_4_iter);
+
+
+            println!("beta{:?}", beta);
+            println!("domain.elements(){:?}", domain.elements());
+
+
+
         // Compute beta * roots
         let beta_roots_iter = domain.elements().map(|root| root * beta);
 
@@ -515,6 +526,11 @@ mod test {
         // Compute beta * roots * K3
         let beta_roots_k3_iter = domain.elements().map(|root| K3 * beta * root);
 
+        println!("beta_roots_iter{:?}", beta_roots_iter);
+        println!("beta_roots_k1_iter{:?}", beta_roots_k1_iter);
+        println!("beta_roots_k2_iter{:?}", beta_roots_k2_iter);
+        println!("beta_roots_k3_iter{:?}", beta_roots_k3_iter);
+
         // Compute left_wire + gamma
         let a_gamma: Vec<_> = a.map(|w| w + gamma).collect();
 
@@ -526,6 +542,11 @@ mod test {
 
         // Compute fourth_wire + gamma
         let d_gamma: Vec<_> = d.map(|w| w + gamma).collect();
+
+        println!("a_gamma{:?}", a_gamma);
+        println!("b_gamma{:?}", b_gamma);
+        println!("c_gamma{:?}", c_gamma);
+        println!("d_gamma{:?}", d_gamma);
 
         let mut numerator_partial_components: Vec<BlsScalar> =
             Vec::with_capacity(n);
@@ -941,22 +962,48 @@ mod test {
 
     #[test]
     fn test_basic_slow_permutation_poly() {
-        let num_wire_mappings = 2;
+        let num_wire_mappings = 4;
         let mut perm = Permutation::new();
         let domain = EvaluationDomain::new(num_wire_mappings).unwrap();
 
+        // 1. Create witness variables for the wires
+        let var_zero = perm.new_witness();
         let var_one = perm.new_witness();
         let var_two = perm.new_witness();
         let var_three = perm.new_witness();
         let var_four = perm.new_witness();
+        let var_five = perm.new_witness();
+        let var_six = perm.new_witness();
 
-        perm.add_witnesses_to_map(var_one, var_two, var_three, var_four, 0);
-        perm.add_witnesses_to_map(var_three, var_two, var_one, var_four, 1);
 
-        let a: Vec<_> = vec![BlsScalar::one(), BlsScalar::from(3)];
-        let b: Vec<_> = vec![BlsScalar::from(2), BlsScalar::from(2)];
-        let c: Vec<_> = vec![BlsScalar::from(3), BlsScalar::one()];
-        let d: Vec<_> = vec![BlsScalar::one(), BlsScalar::one()];
+
+        /*
+        var_zero = {a1, a3, b1, b2} 4
+        var_one = {b3, c2} 64
+        var_two = {a2, c1} 16
+        var_three = {a4, c3} 68
+        var_four = {b4} 5
+        var_five = {c4} 73
+        var_six = {d1, d2, d3, d4} 1
+
+        s_sigma_1 = {a3, c1, b1, c3}
+        s_sigma_2 = {b2, a1, c2, b4}
+        s_sigma_3 = {a2, b3, a4, c4}
+        s_sigma_4 = {d2, d3, d4, d1}
+        */
+            
+        // 2. Map the witnesses to their corresponding gates or stages
+    // 将见证变量映射到电路的位置
+    perm.add_witnesses_to_map(var_zero, var_zero, var_two, var_six, 0); // Gate 1
+    perm.add_witnesses_to_map(var_two, var_zero, var_one, var_six, 1); // Gate 2
+    perm.add_witnesses_to_map(var_zero, var_one, var_three, var_six, 2); // Gate 3
+    perm.add_witnesses_to_map(var_three, var_four, var_five, var_six, 3); // Gate 4
+    
+        // 3. Define the vectors 'a', 'b', and 'c' that correspond to the given inputs and intermediate results
+        let a: Vec<_> = vec![BlsScalar::from(4), BlsScalar::from(16), BlsScalar::from(4), BlsScalar::from(68)];
+        let b: Vec<_> = vec![BlsScalar::from(4), BlsScalar::from(4), BlsScalar::from(64), BlsScalar::from(5)];
+        let c: Vec<_> = vec![BlsScalar::from(16), BlsScalar::from(64), BlsScalar::from(68), BlsScalar::from(73)];
+        let d: Vec<_> = vec![BlsScalar::one(), BlsScalar::one(), BlsScalar::one(), BlsScalar::one()]; // Placeholder for consistency
 
         test_correct_permutation_poly(
             num_wire_mappings,
